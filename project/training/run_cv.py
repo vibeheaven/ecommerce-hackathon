@@ -84,6 +84,7 @@ def main():
     # Persist OOF artifacts for ensembling / analysis
     tag = f"_{args.run_tag}" if args.run_tag else ""
     oof_out = processed_dir / f"oof_{args.model}{tag}.parquet"
+    oof_out.parent.mkdir(parents=True, exist_ok=True)
     oof_df = oof_df.copy()
     oof_df["pred_prob"] = oof_probs_arr
     oof_df.to_parquet(oof_out, index=False)
@@ -99,6 +100,7 @@ def main():
         "metrics": metrics,
     }
     summary_path = processed_dir / f"cv_summary_{args.model}{tag}.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False, default=str)
 
