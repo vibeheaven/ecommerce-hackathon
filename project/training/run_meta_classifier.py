@@ -129,7 +129,7 @@ def main():
     
     validator = Validator(config)
     metrics = validator.evaluate_oof(val_index_with_pred, meta_preds, best_threshold)
-    logger.info(f"Validation Macro F1 after Feature Fusion: {metrics['macro_f1']:.4f}")
+    logger.info(f"Validation Macro F1 after Feature Fusion: {metrics['overall_macro_f1']:.4f}")
 
     # Save meta-classifier model and metadata
     model_output_path = processed_dir / "meta_classifier_lgb.txt"
@@ -138,7 +138,7 @@ def main():
     meta_info = {
         "model_dir": str(model_dir),
         "best_threshold": best_threshold,
-        "val_macro_f1": metrics["macro_f1"],
+        "val_macro_f1": metrics["overall_macro_f1"],
         "feature_names": list(X_val_feats.columns),
     }
     with open(processed_dir / "meta_classifier_meta.json", "w", encoding="utf-8") as f:
