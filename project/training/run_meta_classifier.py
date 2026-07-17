@@ -65,6 +65,15 @@ def main():
     val_index = pd.read_parquet(model_dir / "val_index.parquet")
     logger.info(f"Loaded validation outputs: {len(val_index):,} rows")
 
+    # Map term_id to query from train_splits.parquet since it's not persisted in val_index
+    splits_path = processed_dir / "train_splits.parquet"
+    if not splits_path.exists():
+        logger.error(f"train_splits.parquet not found at {splits_path}. Cannot map term_id to query.")
+        return
+    splits_df = pd.read_parquet(splits_path)
+    term_to_query = splits_df.set_index("term_id")["query"].to_dict()
+    val_index["query"] = val_index["term_id"].map(term_to_query)
+
     # Load items metadata
     items_path = raw_dir / config["data"]["files"]["items"]
     items_df = load_items(items_path)
