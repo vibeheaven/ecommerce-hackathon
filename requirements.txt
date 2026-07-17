@@ -1,0 +1,11 @@
+torch>=2.4
+transformers>=4.44
+pandas>=2.2
+pyarrow>=16.0
+scikit-learn>=1.5
+numpy>=1.26
+tqdm>=4.66
+PyYAML>=6.0
+# optional — only for embedding_hard strategy (build_embedding_neighbors.py)
+sentence-transformers>=3.0
+faiss-cpu>=1.8
