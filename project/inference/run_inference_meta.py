@@ -103,8 +103,16 @@ def main():
     logger.info(f"✓ Submission file generated: {out_file}")
 
     # Validate
-    validate_submission(out_file, config)
-    logger.info("✓ Submission file successfully verified!")
+    sample_path = raw_dir / config["data"]["files"]["sample_submission"]
+    result = validate_submission(
+        submission_path=out_file,
+        sample_submission_path=sample_path,
+        expected_row_count=config["submission"]["required_row_count"],
+    )
+    if result["valid"]:
+        logger.info("✓ Submission file successfully verified!")
+    else:
+        logger.error(f"✗ Submission validation failed! Issues: {result['issues']}")
     
     print("\n" + "="*80)
     print("Kaggle Submission Gönderim Komutunuz:")
