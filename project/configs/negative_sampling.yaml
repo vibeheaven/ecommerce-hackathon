@@ -10,16 +10,16 @@ positive_negative_ratio: 3  # 1 positive : 3 negatives
 
 # --- Strategy Ratios (normalized over active strategies) ---
 strategy_ratios:
-  random: 0.075
-  cross_category: 0.075
+  random: 0.05
+  cross_category: 0.05
   same_category: 0.30
   same_brand: 0.15
-  lexical_hard: 0.20
-  attribute_conflict: 0.10
-  cross_query: 0.10
+  lexical_hard: 0.15
+  attribute_conflict: 0.05
+  cross_query: 0.05
   # Requires precomputed neighbors (project/embeddings/build_embedding_neighbors.py).
   # The sampler raises if this is > 0 without a neighbors file — no silent fallback.
-  embedding_hard: 0.0
+  embedding_hard: 0.20
 
 # --- Type-Based Sample Weights ---
 # Final weight = type_weight × 0.9 noise discount when confidence < 0.90.

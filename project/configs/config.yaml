@@ -69,7 +69,7 @@ training:
   epochs: 5
   batch_size: 16
   gradient_accumulation_steps: 4
-  learning_rate: 2.0e-5
+  learning_rate: 1.0e-5
   weight_decay: 0.01
   warmup_ratio: 0.1
   fp16: true
