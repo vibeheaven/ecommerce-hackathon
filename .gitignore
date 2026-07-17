@@ -35,7 +35,7 @@ project/models/
 *.pth
 
 # --- Inference Reports & Submissions ---
-project/submission/
+project/submission/*.csv
 project/reports/inference_report.md
 project/logs/
 logs/
