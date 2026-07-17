@@ -49,9 +49,7 @@ def load_items(path: Path) -> pd.DataFrame:
             "attributes": "str",
         },
         quotechar='"',
-        escapechar=None,
         on_bad_lines="warn",
-        engine="python",
     )
     logger.info(f"  Loaded {len(df):,} items, columns: {list(df.columns)}")
     return df

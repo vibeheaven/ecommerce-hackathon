@@ -4,7 +4,7 @@
 
 project:
   name: "trendyol-search-relevance"
-  version: "v4"
+  version: "v5"
   seed: 42
 
 # --- Data Paths ---
@@ -75,6 +75,9 @@ training:
   fp16: true
   early_stopping_patience: 3
   scheduler: "cosine"
+  max_grad_norm: 1.0
+  pos_weight: 1.0
+  num_workers: 2
 
 # --- Inference ---
 inference:

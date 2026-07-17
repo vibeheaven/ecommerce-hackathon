@@ -1,7 +1,10 @@
 """
-Build Sampled Dataset — Samples negatives for training and validation splits.
-Builds train_set_sampled.parquet and val_set_sampled.parquet.
-Supports `--max-positive-samples` to make a small subset for debug/smoke runs.
+Build Sampled Dataset — Samples negatives for ALL folds into a single
+fold-aware file: dataset_sampled.parquet.
+
+The old two-file layout (train_set_sampled / val_set_sampled) hard-wired
+fold 0 as validation; the single file lets run_trainer / run_cv pick any
+fold, and lets threshold optimization run on true OOF predictions.
 """
 import yaml
 import argparse
@@ -16,11 +19,11 @@ logger = setup_logger("build_sampled_dataset")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build training & validation datasets with negatives")
+    parser = argparse.ArgumentParser(description="Build the fold-aware sampled dataset")
     parser.add_argument("--config", default="project/configs/config.yaml")
     parser.add_argument("--neg-config", default="project/configs/negative_sampling.yaml")
     parser.add_argument("--max-positive-samples", type=int, default=None, help="Limit number of positives for quick runs")
-    parser.add_argument("--val-fold", type=int, default=0, help="Fold index to use as validation")
+    parser.add_argument("--output", default="dataset_sampled.parquet")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -28,17 +31,16 @@ def main():
     with open(args.neg_config) as f:
         neg_config = yaml.safe_load(f)
 
-    # 1. Load splits and items
     processed_dir = Path(config["data"]["processed_dir"])
     splits_path = processed_dir / "train_splits.parquet"
     if not splits_path.exists():
-        logger.error(f"Splits file not found: {splits_path}. Run split_builder first.")
-        return
+        raise FileNotFoundError(
+            f"Splits file not found: {splits_path}. Run project.data.split_builder first."
+        )
 
     logger.info(f"Loading splits from {splits_path}...")
     splits_df = pd.read_parquet(splits_path)
 
-    # Apply debug limit
     if args.max_positive_samples is not None:
         logger.info(f"Limiting input dataset to first {args.max_positive_samples:,} positive rows for debug.")
         splits_df = splits_df.head(args.max_positive_samples)
@@ -47,35 +49,29 @@ def main():
     items_path = raw_dir / config["data"]["files"]["items"]
     items_df = load_items(items_path)
 
-    # 2. Divide train and val by fold
-    val_fold_idx = args.val_fold
-    logger.info(f"Dividing dataset: Fold {val_fold_idx} is Validation, others are Training.")
-    train_splits = splits_df[splits_df["fold"] != val_fold_idx].copy()
-    val_splits = splits_df[splits_df["fold"] == val_fold_idx].copy()
+    # Load semantic neighbors when the embedding_hard strategy is enabled
+    embedding_neighbors = None
+    if neg_config.get("strategy_ratios", {}).get("embedding_hard", 0.0) > 0:
+        from project.embeddings.build_embedding_neighbors import load_embedding_neighbors
+        pos_by_item_id = {iid: i for i, iid in enumerate(items_df["item_id"].tolist())}
+        embedding_neighbors = load_embedding_neighbors(processed_dir, pos_by_item_id)
+        logger.info(f"Loaded embedding neighbors for {len(embedding_neighbors):,} queries")
 
-    logger.info(f"  Training positives:   {len(train_splits):,}")
-    logger.info(f"  Validation positives: {len(val_splits):,}")
+    # Sample negatives for every positive row; each negative inherits the
+    # fold of its anchor positive, so any fold can serve as validation.
+    sampler = NegativeSampler(config, neg_config, items_df, splits_df, embedding_neighbors=embedding_neighbors)
+    dataset = sampler.build_dataset(splits_df)
 
-    # 3. Sample negatives
-    sampler = NegativeSampler(config, neg_config, items_df, splits_df)
+    output_path = processed_dir / args.output
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Saving dataset to {output_path} ({len(dataset):,} rows)...")
+    dataset.to_parquet(output_path, index=False)
 
-    logger.info("Sampling negatives for Training set...")
-    train_sampled = sampler.build_dataset(train_splits)
+    fold_summary = dataset.groupby("fold")["label"].agg(["count", "sum"])
+    for fold, row in fold_summary.iterrows():
+        logger.info(f"  Fold {fold}: {int(row['count']):,} rows ({int(row['sum']):,} positives)")
 
-    logger.info("Sampling negatives for Validation set...")
-    val_sampled = sampler.build_dataset(val_splits)
-
-    # 4. Save
-    train_output = processed_dir / "train_set_sampled.parquet"
-    val_output = processed_dir / "val_set_sampled.parquet"
-
-    logger.info(f"Saving training set to {train_output} ({len(train_sampled):,} rows)...")
-    train_sampled.to_parquet(train_output, index=False)
-
-    logger.info(f"Saving validation set to {val_output} ({len(val_sampled):,} rows)...")
-    val_sampled.to_parquet(val_output, index=False)
-
-    logger.info("✓ Datasets successfully built!")
+    logger.info("✓ Dataset successfully built!")
 
 
 if __name__ == "__main__":

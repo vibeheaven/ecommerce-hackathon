@@ -68,7 +68,7 @@ class ExperimentTracker:
 
         # Save registry back
         with open(self.registry_path, "w", encoding="utf-8") as f:
-            json.dump(registry, f, indent=4, ensure_ascii=False)
+            json.dump(registry, f, indent=4, ensure_ascii=False, default=float)
 
         logger.info(f"✓ Experiment {exp_id} logged to registry at {self.registry_path}")
         logger.info(f"  Macro F1: {metrics.get('overall_macro_f1', 0.0):.4f} | Optimal Threshold: {metrics.get('threshold', 0.50):.4f}")

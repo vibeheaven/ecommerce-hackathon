@@ -1,66 +1,73 @@
 """
-Scenario Builder — Builds 5 distinct validation sets (Easy, Structural,
+Scenario Builder — Builds distinct validation sets (Easy, Structural,
 Lexical Hard, Semantic Hard, Candidate Set Simulation) for granular testing.
+
+v5 changes:
+  * Scenarios are class-balanced: positives are subsampled (seeded) to match
+    the negative count. The old unbalanced scenarios (50k positives vs 741
+    negatives) produced Macro F1 values dominated by the class imbalance —
+    lexical_hard "F1 0.50" was an artifact, not a measurement.
+  * semantic_hard no longer silently falls back to lexical_hard. It is only
+    built when embedding_hard / mined_hard negatives exist; otherwise it is
+    reported as skipped.
+  * candidate_set_sim intentionally keeps the natural (unbalanced) mix as a
+    submission-distribution simulation.
 """
+import numpy as np
 import pandas as pd
-from typing import Any
 
 from project.utils.logging_utils import setup_logger
 
 logger = setup_logger("scenario_builder")
 
+_SCENARIO_NEG_TYPES = {
+    "easy_mix": ["random", "cross_category"],
+    "structural": ["same_category", "same_brand", "attribute_conflict"],
+    "lexical_hard": ["lexical_hard"],
+    "semantic_hard": ["embedding_hard", "mined_hard"],
+}
+
 
 class ScenarioBuilder:
     """Builds multi-scenario validation datasets from sampled fold data."""
 
-    def __init__(self):
-        pass
+    def __init__(self, seed: int = 42):
+        self.seed = seed
 
     def build_scenarios(self, val_dataset: pd.DataFrame) -> dict[str, pd.DataFrame]:
         """
-        Slice val_dataset containing mixed negatives into 5 specific test scenarios.
+        Slice val_dataset containing mixed negatives into balanced test scenarios.
 
         Args:
-            val_dataset: DataFrame containing 'label', 'negative_type', and features.
-                         Contains both positive (label=1) and negatives (label=0).
-
-        Returns:
-            dict of scenario_name -> DataFrame
+            val_dataset: DataFrame with 'label', 'negative_type' and features,
+                         containing positives (label=1) and negatives (label=0).
         """
-        # Positives are included in all scenarios to compute F1
         positives = val_dataset[val_dataset["label"] == 1]
         negatives = val_dataset[val_dataset["label"] == 0]
+        rng = np.random.default_rng(self.seed)
 
-        scenarios = {}
+        scenarios: dict[str, pd.DataFrame] = {}
 
-        # Scenario A: Easy Mix (random + cross-category negatives)
-        easy_negs = negatives[negatives["negative_type"].isin(["random", "cross_category"])]
-        scenarios["easy_mix"] = pd.concat([positives, easy_negs]).reset_index(drop=True)
+        for name, neg_types in _SCENARIO_NEG_TYPES.items():
+            negs = negatives[negatives["negative_type"].isin(neg_types)]
+            if len(negs) == 0:
+                logger.info(f"  Scenario '{name}': skipped (no negatives of type {neg_types})")
+                continue
 
-        # Scenario B: Structural Mix (same-category + same-brand + attribute conflict negatives)
-        struct_types = ["same_category", "same_brand", "attribute_conflict"]
-        struct_negs = negatives[negatives["negative_type"].isin(struct_types)]
-        scenarios["structural"] = pd.concat([positives, struct_negs]).reset_index(drop=True)
+            if len(positives) > len(negs):
+                pos_idx = rng.choice(len(positives), size=len(negs), replace=False)
+                pos_sample = positives.iloc[np.sort(pos_idx)]
+            else:
+                pos_sample = positives
 
-        # Scenario C: Lexical Hard (lexical hard negatives only)
-        lex_negs = negatives[negatives["negative_type"] == "lexical_hard"]
-        scenarios["lexical_hard"] = pd.concat([positives, lex_negs]).reset_index(drop=True)
+            scenarios[name] = pd.concat([pos_sample, negs]).reset_index(drop=True)
 
-        # Scenario D: Semantic Hard (embedding hard negatives only)
-        # Fallback to lexical_hard if embedding_hard negatives are not present (V1 stage)
-        sem_negs = negatives[negatives["negative_type"] == "embedding_hard"]
-        if len(sem_negs) == 0:
-            sem_negs = lex_negs
-        scenarios["semantic_hard"] = pd.concat([positives, sem_negs]).reset_index(drop=True)
-
-        # Scenario E: Candidate Set Simulation
-        # Simulate query-level ranking by combining a positive with all sampled negatives
-        # This includes everything
+        # Submission-distribution simulation: everything, natural imbalance.
         scenarios["candidate_set_sim"] = val_dataset.copy().reset_index(drop=True)
 
         for name, df in scenarios.items():
-            pos_cnt = len(df[df["label"] == 1])
-            neg_cnt = len(df[df["label"] == 0])
+            pos_cnt = int((df["label"] == 1).sum())
+            neg_cnt = int((df["label"] == 0).sum())
             logger.info(
                 f"  Scenario '{name}': {len(df):,} rows "
                 f"(positives: {pos_cnt:,}, negatives: {neg_cnt:,})"

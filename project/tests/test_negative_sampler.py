@@ -32,7 +32,7 @@ def sample_configs():
             "lexical_hard": 0.05,
             "attribute_conflict": 0.05,
             "cross_query": 0.15,
-            "embedding_hard": 0.25
+            "embedding_hard": 0.0
         },
         "confidence": {
             "discard_below": 0.80,
@@ -105,6 +105,16 @@ def test_probable_positive_filter(sample_configs):
 
     # 3. Low overlap -> not probable positive
     assert pp_filter.is_probable_positive("siyah ceket", "mavi kot pantolon") is False
+
+
+def test_embedding_hard_requires_neighbors(sample_configs, mock_dataset):
+    """embedding_hard > 0 without a neighbors file must fail loudly, not silently produce 0."""
+    config, neg_config = sample_configs
+    items, train = mock_dataset
+    neg_config = {**neg_config, "strategy_ratios": {**neg_config["strategy_ratios"], "embedding_hard": 0.25}}
+
+    with pytest.raises(ValueError, match="embedding_hard"):
+        NegativeSampler(config, neg_config, items, train)
 
 
 def test_negative_sampler(sample_configs, mock_dataset):

@@ -25,6 +25,14 @@ def build_splits(
     """
     logger.info(f"Building {n_splits}-fold splits based on normalized query hash...")
 
+    # Duplicate (term_id, item_id) pairs would leak identical rows across the
+    # dataset; drop them before splitting.
+    if {"term_id", "item_id"}.issubset(train_df.columns):
+        dup_mask = train_df.duplicated(["term_id", "item_id"], keep="first")
+        if dup_mask.any():
+            logger.warning(f"  Dropping {dup_mask.sum():,} duplicate (term_id, item_id) pairs")
+            train_df = train_df[~dup_mask].reset_index(drop=True)
+
     # Calculate normalized query hash if not present
     if "normalized_query_hash" not in train_df.columns:
         logger.info("  Generating normalized query hashes for split...")
@@ -56,9 +64,11 @@ def build_splits(
         val_queries = set(train_df[train_df["fold"] == f]["normalized_query_hash"])
         leakage = train_queries.intersection(val_queries)
         if leakage:
-            logger.error(f"  [ERROR] Leakage detected in fold {f}: {len(leakage)} overlapping query hashes!")
-        else:
-            logger.info(f"  ✓ Fold {f} has 0 query leakage.")
+            raise RuntimeError(
+                f"Query leakage detected in fold {f}: {len(leakage)} overlapping query hashes. "
+                "Refusing to save leaky splits."
+            )
+        logger.info(f"  ✓ Fold {f} has 0 query leakage.")
 
     return train_df
 
