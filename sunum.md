@@ -92,3 +92,18 @@ Modelin başarısını sadece tek bir genel skorla değil, 5 farklı senaryoda t
 *   **Verimlilik Optimizasyonları:**
     *   *Dynamic Padding & Length-Bucket Batching:* Benzer uzunluktaki girdileri gruplayarak GPU üzerindeki dolgu işlemlerini (padding) minimuma indirir, eğitimi %40 hızlandırır.
     *   *Mixed Precision (AMP):* FP16 hassasiyeti kullanarak GPU bellek tüketimini yarıya indirir.
+
+
+python3 -m project.data.split_builder
+
+
+python3 -m project.data.build_sampled_dataset
+
+
+python3 -m project.training.run_trainer --epochs 3
+
+
+python3 -m project.inference.run_inference --model xlm-roberta-base
+
+
+kaggle competitions submit -c trendyol-e-ticaret-yarismasi-2026-kaggle -f project/submission/submission_v001_<timestamp>.csv -m "V1 Cross Encoder baseline"
