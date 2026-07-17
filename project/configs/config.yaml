@@ -65,7 +65,7 @@ threshold:
 
 # --- Training ---
 training:
-  max_length: 256
+  max_length: 192
   epochs: 5
   batch_size: 16
   gradient_accumulation_steps: 4
@@ -82,7 +82,7 @@ training:
 # --- Inference ---
 inference:
   batch_size: 128
-  max_length: 256
+  max_length: 192
   fp16: true
   num_workers: 4
 
