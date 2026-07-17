@@ -46,10 +46,11 @@ class FeatureExtractor:
         logger.info(f"Extracting features for {len(pairs_df):,} pairs...")
         
         features = []
-        for row in tqdm(pairs_df.itertuples(index=False), total=len(pairs_df), desc="Extracting Features"):
-            q_raw = row.query if isinstance(row.query, str) else ""
+        queries = pairs_df["query"].fillna("").tolist()
+        item_ids = pairs_df["item_id"].tolist()
+        
+        for q_raw, item_id in tqdm(zip(queries, item_ids), total=len(pairs_df), desc="Extracting Features"):
             q_clean = clean_index_text(q_raw)
-            item_id = row.item_id
             
             # Get item metadata
             item = self.item_lookup.get(item_id, {})
