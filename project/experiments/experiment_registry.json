@@ -1,0 +1,53 @@
+[
+    {
+        "experiment_id": "EXP_001",
+        "date": "2026-07-17 00:53:08",
+        "model_name": "xlm-roberta-base",
+        "commit": "unknown",
+        "hyperparameters": {
+            "model": "xlm-roberta-base",
+            "lr": 2e-05,
+            "batch_size": 16,
+            "epochs": 3,
+            "grad_accum": 4,
+            "max_length": 256
+        },
+        "metrics": {
+            "overall_macro_f1": 0.6090909090909091,
+            "overall_precision": 0.6162162162162163,
+            "overall_recall": 0.6046511627906976,
+            "overall_accuracy": 0.7209302325581395,
+            "positive_f1": 0.4,
+            "negative_f1": 0.8181818181818182,
+            "macro_f1_mean": 0.6090909090909091,
+            "macro_f1_std": 0.0,
+            "macro_f1_worst": 0.6090909090909091,
+            "precision_mean": 0.6162162162162163,
+            "precision_std": 0.0,
+            "precision_worst": 0.6162162162162163,
+            "recall_mean": 0.6046511627906976,
+            "recall_std": 0.0,
+            "recall_worst": 0.6046511627906976,
+            "accuracy_mean": 0.7209302325581395,
+            "accuracy_std": 0.0,
+            "accuracy_worst": 0.7209302325581395,
+            "negative_f1_mean": 0.8181818181818182,
+            "negative_f1_std": 0.0,
+            "negative_f1_worst": 0.8181818181818182,
+            "positive_f1_mean": 0.4,
+            "positive_f1_std": 0.0,
+            "positive_f1_worst": 0.4,
+            "tn_rate_cross_category": 0.9534883720930233,
+            "tn_rate_random": 0.8604651162790697,
+            "tn_rate_same_brand": 1.0,
+            "tn_rate_same_category": 0.6666666666666666,
+            "scenario_f1_easy_mix": 0.6471829335000391,
+            "scenario_f1_structural": 0.5222222222222221,
+            "scenario_f1_lexical_hard": 0.2711864406779661,
+            "scenario_f1_semantic_hard": 0.2711864406779661,
+            "scenario_f1_candidate_set_sim": 0.6090909090909091,
+            "threshold": 0.3540000000000002
+        },
+        "notes": "V1 baseline Deep Learning cross encoder model"
+    }
+]

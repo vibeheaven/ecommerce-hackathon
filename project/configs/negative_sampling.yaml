@@ -1,0 +1,56 @@
+# ============================================================
+# Negative Sampling Configuration
+# ============================================================
+
+# --- Overall Settings ---
+positive_negative_ratio: 3  # 1 positive : 3 negatives
+total_negatives_per_positive: 3
+
+# --- Strategy Ratios (must sum to 1.0) ---
+strategy_ratios:
+  random: 0.10
+  cross_category: 0.10
+  same_category: 0.20
+  same_brand: 0.10
+  lexical_hard: 0.05
+  attribute_conflict: 0.05
+  cross_query: 0.15
+  embedding_hard: 0.25  # V2+ (requires BGE-M3 + FAISS)
+
+# --- Confidence Thresholds ---
+confidence:
+  # Sample weighting based on negative confidence
+  weight_tiers:
+    - min: 0.95
+      max: 1.00
+      weight: 1.0
+    - min: 0.90
+      max: 0.95
+      weight: 0.8
+    - min: 0.80
+      max: 0.90
+      weight: 0.5
+  discard_below: 0.80
+
+# --- Probable-Positive Filter ---
+probable_positive:
+  # Candidates matching these criteria are NOT used as negatives
+  title_contains_query_threshold: 0.85  # token overlap ratio
+  semantic_similarity_threshold: 0.92
+  lexical_similarity_threshold: 0.90
+  require_category_match: true
+  require_brand_match: false  # brand alone not sufficient
+
+# --- V1 Strategy (no embedding required) ---
+v1_strategies:
+  - random
+  - cross_category
+  - same_category
+  - same_brand
+  - lexical_hard
+  - attribute_conflict
+  - cross_query
+
+# --- V2+ Strategy (requires BGE-M3 + FAISS) ---
+v2_additional:
+  - embedding_hard

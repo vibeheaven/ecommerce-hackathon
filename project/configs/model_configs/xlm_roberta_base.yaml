@@ -1,0 +1,30 @@
+# ============================================================
+# XLM-RoBERTa Base — Cross Encoder Config
+# ============================================================
+
+model:
+  name: "xlm-roberta-base"
+  pretrained: "xlm-roberta-base"
+  num_labels: 1  # binary classification via sigmoid
+  max_length: 256
+  dropout: 0.1
+
+training:
+  learning_rate: 2.0e-5
+  batch_size: 16
+  gradient_accumulation_steps: 4
+  effective_batch_size: 64
+  epochs: 5
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  fp16: true
+  early_stopping_patience: 3
+  scheduler: "cosine"
+  max_grad_norm: 1.0
+  seed: 42
+
+checkpoint:
+  save_dir: "project/models/cross_encoder/xlm_roberta_base"
+  save_best_only: true
+  metric: "macro_f1"
+  mode: "max"

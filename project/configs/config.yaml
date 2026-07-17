@@ -1,0 +1,102 @@
+# ============================================================
+# Trendyol E-Commerce Search Relevance — Main Configuration
+# ============================================================
+
+project:
+  name: "trendyol-search-relevance"
+  version: "v4"
+  seed: 42
+
+# --- Data Paths ---
+data:
+  raw_dir: "trendyol-e-ticaret-yarismasi-2026-kaggle"
+  processed_dir: "project/data/processed"
+  cache_dir: "project/data/cache"
+  files:
+    items: "items.csv"
+    terms: "terms.csv"
+    training_pairs: "training_pairs.csv"
+    submission_pairs: "submission_pairs.csv"
+    sample_submission: "sample_submission.csv"
+
+# --- Text Cleaning ---
+text_cleaning:
+  unicode_normalize: true
+  turkish_lowercase: true
+  html_cleanup: true
+  whitespace_normalize: true
+  preserve_numbers: true
+  # model_text: Türkçe karakterleri korur (cross encoder input)
+  # index_text: ASCII-normalized (BM25, fuzzy matching)
+
+# --- Attribute Parser ---
+attribute_parser:
+  delimiter: ","
+  key_value_separator: ":"
+  target_fields:
+    - color
+    - material
+    - pattern
+    - collection
+    - season
+    - size
+    - fabric
+    - capacity
+    - origin
+
+# --- Validation ---
+validation:
+  n_folds: 5
+  group_key: "normalized_query_hash"  # NOT term_id
+  scenarios:
+    - "easy_mix"          # random + cross-category
+    - "structural"        # same-category + same-brand + attribute conflict
+    - "lexical_hard"      # high BM25 + high token overlap + different model
+    - "semantic_hard"     # BGE-M3 nearest + probable-positive filter
+    - "candidate_set_sim" # ~50-150 candidates per query (submission simulation)
+
+# --- Threshold Optimization ---
+threshold:
+  coarse_range: [0.20, 0.80]
+  coarse_step: 0.01
+  fine_range_delta: 0.03
+  fine_step: 0.001
+  method: "oof"  # out-of-fold predictions
+
+# --- Training ---
+training:
+  max_length: 256
+  epochs: 5
+  batch_size: 16
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  fp16: true
+  early_stopping_patience: 3
+  scheduler: "cosine"
+
+# --- Inference ---
+inference:
+  batch_size: 128
+  max_length: 256
+  fp16: true
+  num_workers: 4
+
+# --- Submission ---
+submission:
+  output_dir: "project/submission"
+  versioned: true
+  required_row_count: 3359679
+  required_columns: ["id", "prediction"]
+  valid_labels: [0, 1]
+
+# --- Experiment Tracking ---
+experiments:
+  output_dir: "project/experiments"
+  format: "json"  # v1: json, v2: mlflow/wandb
+
+# --- Logging ---
+logging:
+  level: "INFO"
+  log_dir: "project/logs"

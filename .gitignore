@@ -1,0 +1,42 @@
+# --- Virtual Environment ---
+.venv/
+venv/
+ENV/
+
+# --- Python & Testing Caches ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# --- IDE & OS ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- Competition Datasets (Raw & Processed) ---
+trendyol-e-ticaret-yarismasi-2026-kaggle/
+trendyol-e-ticaret-yarismasi-2026-kaggle.zip
+project/data/raw/
+project/data/processed/
+project/data/cache/
+
+# --- Models & Weights ---
+project/models/
+*.safetensors
+*.bin
+*.h5
+*.pt
+*.pth
+
+# --- Inference Reports & Submissions ---
+project/submission/
+project/reports/inference_report.md
+project/logs/
+logs/
+*.log
